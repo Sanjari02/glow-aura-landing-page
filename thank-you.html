@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>অর্ডার সফল | Glow Aura</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Arial,"Noto Sans Bengali",sans-serif;background:#f7f3eb;color:#243328;display:flex;align-items:center;justify-content:center;padding:20px}.card{width:100%;max-width:620px;background:#fff;border-radius:24px;padding:42px 28px;text-align:center;box-shadow:0 12px 45px #00000012}.icon{width:76px;height:76px;border-radius:50%;background:#e7f2e1;color:#2f6535;font-size:42px;line-height:76px;margin:0 auto 20px}h1{color:#2f6535;margin:0 0 12px;font-size:34px}p{font-size:17px;line-height:1.7;color:#59645b}.summary{background:#f5f8f2;border-radius:16px;padding:18px;text-align:left;margin:25px 0}.row{display:flex;justify-content:space-between;gap:20px;padding:8px 0;border-bottom:1px solid #e5eadf}.row:last-child{border-bottom:0;font-weight:800}.btn{display:block;text-decoration:none;background:#2f6535;color:#fff;padding:14px 20px;border-radius:10px;font-weight:800;margin-top:20px}.call{background:#b35a2d}small{color:#7a837c}
+</style>
+</head>
+<body>
+<div class="card">
+<div class="icon">✓</div>
+<h1>অর্ডার সফলভাবে গ্রহণ করা হয়েছে!</h1>
+<p>ধন্যবাদ <strong id="customerName">আপনাকে</strong>। আপনার Glow Aura অর্ডারটি আমরা পেয়েছি।</p>
+<div class="summary">
+<div class="row"><span>Product</span><strong>Glow Aura — 150g</strong></div>
+<div class="row"><span>Quantity</span><strong id="orderQty">1</strong></div>
+<div class="row"><span>Delivery</span><strong id="deliveryArea">—</strong></div>
+<div class="row"><span>Total</span><strong id="orderTotal">৳550</strong></div>
+</div>
+<p>আমাদের টিম আপনার দেওয়া মোবাইল নম্বরে যোগাযোগ করে অর্ডারটি confirm করবে।</p>
+<small>Organic Nature Life</small>
+<a class="btn" href="index.html">← আবার Landing Page-এ যান</a>
+<a class="btn call" href="tel:+8801568-344614">📞 প্রয়োজনে কল করুন</a>
+</div>
+<script>
+const params=new URLSearchParams(location.search);
+document.getElementById("customerName").textContent=params.get("name")||"আপনাকে";
+const qty=Number(params.get("qty")||1);
+const area=params.get("area")||"";
+const delivery=area==="ঢাকা"?70:area==="ঢাকার বাইরে"?120:0;
+document.getElementById("orderQty").textContent=qty;
+document.getElementById("deliveryArea").textContent=area?area+" — ৳"+delivery:"—";
+document.getElementById("orderTotal").textContent="৳"+((550*qty)+delivery).toLocaleString("en-US");
+</script>
+</body>
+</html>
