@@ -288,11 +288,12 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
 
         formMsg.style.color = "#ffffff";
 
-        formMsg.innerHTML =
-            "<b>🎉 অর্ডার সফলভাবে গ্রহণ করা হয়েছে!</b><br>" +
-            "আমাদের টিম খুব শিগগিরই আপনার সাথে যোগাযোগ করবে।";
+        const thankYouUrl =
+    "thank-you.html?name=" + encodeURIComponent(name) +
+    "&qty=" + encodeURIComponent(quantity) +
+    "&area=" + encodeURIComponent(deliveryArea);
 
-        document.getElementById("orderForm").reset();
+window.location.href = thankYouUrl;
 
         calculateTotal();
 
