@@ -4,6 +4,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>অর্ডার সফল | Glow Aura</title>
+
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+
+fbq('init', '1792346978864361');
+fbq('track', 'PageView');
+</script>
+<noscript>
+<img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1792346978864361&ev=PageView&noscript=1"/>
+</noscript>
+<!-- End Meta Pixel Code -->
 <style>
 *{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Arial,"Noto Sans Bengali",sans-serif;background:#f7f3eb;color:#243328;display:flex;align-items:center;justify-content:center;padding:20px}.card{width:100%;max-width:620px;background:#fff;border-radius:24px;padding:42px 28px;text-align:center;box-shadow:0 12px 45px #00000012}.icon{width:76px;height:76px;border-radius:50%;background:#e7f2e1;color:#2f6535;font-size:42px;line-height:76px;margin:0 auto 20px}h1{color:#2f6535;margin:0 0 12px;font-size:34px}p{font-size:17px;line-height:1.7;color:#59645b}.summary{background:#f5f8f2;border-radius:16px;padding:18px;text-align:left;margin:25px 0}.row{display:flex;justify-content:space-between;gap:20px;padding:8px 0;border-bottom:1px solid #e5eadf}.row:last-child{border-bottom:0;font-weight:800}.btn{display:block;text-decoration:none;background:#2f6535;color:#fff;padding:14px 20px;border-radius:10px;font-weight:800;margin-top:20px}.call{background:#b35a2d}small{color:#7a837c}
 </style>
@@ -32,7 +52,19 @@ const area=params.get("area")||"";
 const delivery=area==="ঢাকা"?70:area==="ঢাকার বাইরে"?120:0;
 document.getElementById("orderQty").textContent=qty;
 document.getElementById("deliveryArea").textContent=area?area+" — ৳"+delivery:"—";
-document.getElementById("orderTotal").textContent="৳"+((550*qty)+delivery).toLocaleString("en-US");
+const total=(550*qty)+delivery;
+document.getElementById("orderTotal").textContent="৳"+total.toLocaleString("en-US");
+
+/* Track successful order submission as a Lead */
+if (typeof fbq === "function") {
+  fbq('track', 'Lead', {
+    value: total,
+    currency: 'BDT',
+    content_name: 'Glow Aura Organic Face Pack',
+    content_type: 'product',
+    contents: [{id: 'glow-aura-150g', quantity: qty}]
+  });
+}
 </script>
 </body>
 </html>
