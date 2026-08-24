@@ -202,41 +202,82 @@ Call: +880 1568-344 614 • Email: organicnaturelife24@gmail.com
 
 <script>
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8bjeCJpggIl_ClZwycz3GYeThDlokZkB_ZQ0x2u9fC0U8fKd8VUnFCYFEWB4Q81T6LQ/exec";
+/* =====================================================
+   GLOW AURA ORDER FORM + META BROWSER IDENTIFIERS
+   Pixel ID: 28215584491407207
+   ===================================================== */
 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8bjeCJpggIl_ClZwycz3GYeThDlokZkB_ZQ0x2u9fC0U8fKd8VUnFCYFEWB4Q81T6LQ/exec";
 const productPrice = 550;
 
 const qty = document.getElementById("qty");
 const delivery = document.getElementById("delivery");
 const totalPrice = document.getElementById("totalPrice");
 
+/* Read a browser cookie safely */
+function getCookie(name) {
+    const prefix = name + "=";
+    const cookies = document.cookie ? document.cookie.split(";") : [];
+
+    for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.indexOf(prefix) === 0) {
+            return decodeURIComponent(cookie.substring(prefix.length));
+        }
+    }
+
+    return "";
+}
+
+/*
+   Meta's _fbp is normally created by the Pixel.
+   _fbc is created when the visitor arrives with fbclid.
+*/
+function getMetaBrowserIds() {
+
+    let fbp = getCookie("_fbp");
+    let fbc = getCookie("_fbc");
+
+    if (!fbc) {
+        const params = new URLSearchParams(window.location.search);
+        const fbclid = params.get("fbclid");
+
+        if (fbclid) {
+            fbc = "fb.1." + Date.now() + "." + fbclid;
+        }
+    }
+
+    return {
+        fbp: fbp,
+        fbc: fbc
+    };
+}
+
 function calculateTotal() {
 
-    let quantity = Number(qty.value);
+    const quantity = Number(qty.value) || 1;
     let deliveryCharge = 0;
 
     if (delivery.value === "ঢাকা") {
         deliveryCharge = 70;
-    }
-
-    if (delivery.value === "ঢাকার বাইরে") {
+    } else if (delivery.value === "ঢাকার বাইরে") {
         deliveryCharge = 120;
     }
 
-    let total = (productPrice * quantity) + deliveryCharge;
+    const total = (productPrice * quantity) + deliveryCharge;
 
     if (delivery.value === "") {
         totalPrice.textContent =
             "মোট: ৳" + (productPrice * quantity) + " + Delivery";
     } else {
-        totalPrice.textContent =
-            "মোট: ৳" + total;
+        totalPrice.textContent = "মোট: ৳" + total;
     }
+
+    return total;
 }
 
 qty.addEventListener("change", calculateTotal);
 delivery.addEventListener("change", calculateTotal);
-
 calculateTotal();
 
 
@@ -250,81 +291,88 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
     const name = document.getElementById("name").value.trim();
     const phone = document.getElementById("phone").value.trim();
     const address = document.getElementById("address").value.trim();
-    const quantity = document.getElementById("qty").value;
+    const quantity = Number(document.getElementById("qty").value) || 1;
     const deliveryArea = document.getElementById("delivery").value;
 
+    /* Validate Bangladeshi mobile number */
     if (!/^01[0-9]{9}$/.test(phone)) {
-
         formMsg.style.color = "red";
-        formMsg.textContent =
-            "সঠিক ১১ সংখ্যার মোবাইল নম্বর দিন।";
-
+        formMsg.textContent = "সঠিক ১১ সংখ্যার মোবাইল নম্বর দিন।";
         return;
     }
 
     if (deliveryArea === "") {
-
         formMsg.style.color = "red";
-        formMsg.textContent =
-            "Delivery Area নির্বাচন করুন।";
-
+        formMsg.textContent = "Delivery Area নির্বাচন করুন।";
         return;
     }
 
+    const deliveryCharge = deliveryArea === "ঢাকা" ? 70 : 120;
+    const total = (productPrice * quantity) + deliveryCharge;
+
+    /* Capture Meta browser identifiers at the moment of order */
+    const metaIds = getMetaBrowserIds();
+
+    /* Prevent double submission */
     submitBtn.disabled = true;
     submitBtn.textContent = "অর্ডার পাঠানো হচ্ছে...";
-
     formMsg.style.color = "white";
     formMsg.textContent = "অনুগ্রহ করে অপেক্ষা করুন...";
 
+    /*
+       These fields are saved in Google Sheet and later used by
+       the Apps Script Conversions API Purchase event.
+    */
     const orderData = {
-
         name: name,
         phone: phone,
         address: address,
         quantity: quantity,
-        deliveryArea: deliveryArea
+        deliveryArea: deliveryArea,
+        total: total,
 
+        /* Meta matching parameters */
+        fbp: metaIds.fbp,
+        fbc: metaIds.fbc,
+        userAgent: navigator.userAgent,
+        eventSourceUrl: window.location.href
     };
 
     try {
 
         await fetch(SCRIPT_URL, {
-
             method: "POST",
-
             mode: "no-cors",
-
             headers: {
                 "Content-Type": "text/plain;charset=utf-8"
             },
-
             body: JSON.stringify(orderData)
-
         });
 
-        formMsg.style.color = "#ffffff";
+        /*
+           Lead is intentionally NOT fired here because the current
+           thank-you.html already fires the Lead event. This avoids
+           duplicate Lead events for the same order.
+        */
 
         const thankYouUrl =
-    "thank-you.html?name=" + encodeURIComponent(name) +
-    "&qty=" + encodeURIComponent(quantity) +
-    "&area=" + encodeURIComponent(deliveryArea);
+            "thank-you.html?name=" + encodeURIComponent(name) +
+            "&qty=" + encodeURIComponent(quantity) +
+            "&area=" + encodeURIComponent(deliveryArea);
 
-window.location.href = thankYouUrl;
-
-        calculateTotal();
+        window.location.href = thankYouUrl;
 
     } catch (error) {
 
-        formMsg.style.color = "#ffdddd";
+        console.error("Order submission error:", error);
 
+        formMsg.style.color = "#ffdddd";
         formMsg.textContent =
             "অর্ডার পাঠানো যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।";
 
+        submitBtn.disabled = false;
+        submitBtn.textContent = "অর্ডার কনফার্ম করুন";
     }
-
-    submitBtn.disabled = false;
-    submitBtn.textContent = "অর্ডার কনফার্ম করুন";
 
 });
 
