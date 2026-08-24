@@ -214,7 +214,6 @@ const qty = document.getElementById("qty");
 const delivery = document.getElementById("delivery");
 const totalPrice = document.getElementById("totalPrice");
 
-/* Read a browser cookie safely */
 function getCookie(name) {
     const prefix = name + "=";
     const cookies = document.cookie ? document.cookie.split(";") : [];
@@ -225,16 +224,10 @@ function getCookie(name) {
             return decodeURIComponent(cookie.substring(prefix.length));
         }
     }
-
     return "";
 }
 
-/*
-   Meta's _fbp is normally created by the Pixel.
-   _fbc is created when the visitor arrives with fbclid.
-*/
 function getMetaBrowserIds() {
-
     let fbp = getCookie("_fbp");
     let fbc = getCookie("_fbc");
 
@@ -244,17 +237,42 @@ function getMetaBrowserIds() {
 
         if (fbclid) {
             fbc = "fb.1." + Date.now() + "." + fbclid;
+
+            // Keep the Click ID available for later orders from this browser.
+            try {
+                document.cookie = "_fbc=" + encodeURIComponent(fbc) + "; path=/; max-age=7776000; SameSite=Lax; Secure";
+            } catch (cookieError) {
+                console.warn("Could not save _fbc cookie", cookieError);
+            }
         }
     }
 
-    return {
-        fbp: fbp,
-        fbc: fbc
-    };
+    return { fbp: fbp, fbc: fbc };
+}
+
+async function getClientIp() {
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 2500);
+
+        const response = await fetch("https://api.ipify.org?format=json", {
+            method: "GET",
+            cache: "no-store",
+            signal: controller.signal
+        });
+
+        clearTimeout(timeout);
+
+        if (!response.ok) return "";
+
+        const data = await response.json();
+        return data.ip || "";
+    } catch (error) {
+        return "";
+    }
 }
 
 function calculateTotal() {
-
     const quantity = Number(qty.value) || 1;
     let deliveryCharge = 0;
 
@@ -267,8 +285,7 @@ function calculateTotal() {
     const total = (productPrice * quantity) + deliveryCharge;
 
     if (delivery.value === "") {
-        totalPrice.textContent =
-            "মোট: ৳" + (productPrice * quantity) + " + Delivery";
+        totalPrice.textContent = "মোট: ৳" + (productPrice * quantity) + " + Delivery";
     } else {
         totalPrice.textContent = "মোট: ৳" + total;
     }
@@ -279,7 +296,6 @@ function calculateTotal() {
 qty.addEventListener("change", calculateTotal);
 delivery.addEventListener("change", calculateTotal);
 calculateTotal();
-
 
 document.getElementById("orderForm").addEventListener("submit", async function(e) {
 
@@ -294,7 +310,6 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
     const quantity = Number(document.getElementById("qty").value) || 1;
     const deliveryArea = document.getElementById("delivery").value;
 
-    /* Validate Bangladeshi mobile number */
     if (!/^01[0-9]{9}$/.test(phone)) {
         formMsg.style.color = "red";
         formMsg.textContent = "সঠিক ১১ সংখ্যার মোবাইল নম্বর দিন।";
@@ -309,20 +324,17 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
 
     const deliveryCharge = deliveryArea === "ঢাকা" ? 70 : 120;
     const total = (productPrice * quantity) + deliveryCharge;
-
-    /* Capture Meta browser identifiers at the moment of order */
     const metaIds = getMetaBrowserIds();
 
-    /* Prevent double submission */
     submitBtn.disabled = true;
     submitBtn.textContent = "অর্ডার পাঠানো হচ্ছে...";
     formMsg.style.color = "white";
     formMsg.textContent = "অনুগ্রহ করে অপেক্ষা করুন...";
 
-    /*
-       These fields are saved in Google Sheet and later used by
-       the Apps Script Conversions API Purchase event.
-    */
+    // Try to collect the visitor IP for Meta CAPI matching.
+    // If the lookup is blocked, the order still proceeds normally.
+    const clientIp = await getClientIp();
+
     const orderData = {
         name: name,
         phone: phone,
@@ -330,11 +342,10 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
         quantity: quantity,
         deliveryArea: deliveryArea,
         total: total,
-
-        /* Meta matching parameters */
         fbp: metaIds.fbp,
         fbc: metaIds.fbc,
         userAgent: navigator.userAgent,
+        clientIpAddress: clientIp,
         eventSourceUrl: window.location.href
     };
 
@@ -348,12 +359,6 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
             },
             body: JSON.stringify(orderData)
         });
-
-        /*
-           Lead is intentionally NOT fired here because the current
-           thank-you.html already fires the Lead event. This avoids
-           duplicate Lead events for the same order.
-        */
 
         const thankYouUrl =
             "thank-you.html?name=" + encodeURIComponent(name) +
